@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<script src="Chart.min.js"></script>
+<script src="angular-chart.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+
+
+<body>
+
+<div ng-app="myApp" ng-controller="personCtrl">
+	<div class="row">
+		<div class="col-md-6  mx-auto w-50 p-3">
+			<canvas id="pie" class="chart chart-pie"
+			  chart-data="cdata" chart-labels="clabels" chart-options="options">
+			</canvas>
+		</div>
+	</div>
+	<div class="row text-center form-group">		
+		<div class="col-md-6 col-sm-11">
+			search:<input type="text" class="form-control form-control-lg" ng-model="search_key">
+		</div>
+		<div class="col-md-6 col-sm-11">
+			sort:<select class="form-control form-control-lg" ng-model="sort_key" ng-options="x for x in names" ng-change="orderByMe()">
+			</select>
+		</div>
+	</div>
+	<p>
+	
+	
+	
+	</p>
+	<div class="row">
+	  <div class="col-md-6 col-sm-12" ng-repeat="x in data  | orderBy:sort_key ">
+		<br>
+		<br>		
+		<div class="card">
+		  <div class="card-body bg-info">
+			<div class="row">
+				<div class="col-md-3">
+					<div class="row">
+						<div class="col-12">
+							<i class="fab fa-app-store-ios display-1"></i>
+						</div>
+					</div>
+					
+				</div>
+				<div class="col-md-8">
+					<h4 class="card-title">{{ x['im:name']['label'] }}</h4>
+					<p class="card-text">{{x['im:price']['label']}}</p>
+					<p class="card-text">{{x['im:releaseDate']['label']}}</p>
+				</div>
+			</div>
+						
+		  </div>
+		</div>
+	  </div>
+	</div>
+
+</div>
+
+<script>	
+ angular.module('myApp', ["chart.js"])		
+		.controller('personCtrl', function($scope,$http) {
+			$scope.clabels = [];
+			$scope.cdata = [];
+			$scope.names = ['price','releaseDate'];
+			$scope.search_key;
+			$scope.sort;
+			$scope.firstName = "John";
+			$scope.lastName = "Doe";	
+			$scope.data;
+			$scope.originalData;
+			$scope.chartData;
+			$http
+			.get("https://itunes.apple.com/us/rss/toppaidapplications/limit=100/json")
+			.then(function(response) {
+				$scope.data = response.data['feed']['entry'].map(function(item,index){
+					var price = item['im:price']['label'];
+					var releaseDate = item['im:releaseDate']['label'];
+					var name = item['im:name']['label'];
+					item.price = price;
+					item.releaseDate = releaseDate;
+					item.name = name;
+					return item;
+				});
+				$scope.originalData=$scope.data;
+				
+					$scope.chartData=$scope.data.map(function(item){
+						return item.price;
+					});
+					var uniqueItems = Array.from(new Set($scope.chartData));
+					
+					var chartValues = uniqueItems.map(function(item){
+						var count = 0;
+						
+						for(let i=0;i<$scope.chartData.length;i++){
+							if($scope.chartData[i]==item){
+								count++;
+							}
+						}						
+						$scope.clabels.push(item);
+						$scope.cdata.push(count);
+						return chartValues;
+					});
+			});	
+			
+			$scope.orderByMe = function() {
+				console.log($scope.sort_key)
+				//$scope.myOrderBy = x;
+			}
+			$scope.$watch('search_key',function(){				
+				if($scope.search_key){
+					$scope.data=$scope.originalData.filter(function(item){
+					console.log(item.name.search(/$scope.search_key/i));
+					var s1 = item.name.toUpperCase();
+					var s2 = $scope.search_key.toUpperCase();
+						if(s1.search(s2)>=0){
+							console.log(item.name)
+							return item;
+						}
+					});
+					$scope.clabels = [];
+					$scope.cdata = [];
+					$scope.chartData=$scope.data.map(function(item){
+						return item.price;
+					});
+					var uniqueItems = Array.from(new Set($scope.chartData));
+					
+					var chartValues = uniqueItems.map(function(item){
+						var count = 0;
+						
+						for(let i=0;i<$scope.chartData.length;i++){
+							if($scope.chartData[i]==item){
+								count++;
+							}
+						}						
+						$scope.clabels.push(item);
+						$scope.cdata.push(count);
+						return chartValues;
+					});
+					console.log($scope.data);
+				}
+				else{
+					$scope.data=$scope.originalData;
+				}
+			});
+		});
+
+</script>
+
+</body>
+</html>
